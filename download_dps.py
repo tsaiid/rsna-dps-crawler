@@ -43,6 +43,7 @@ def main():
     # parse poster id
     parser = argparse.ArgumentParser()
     parser.add_argument('poster_id')
+    parser.add_argument("-t", "--test", help="run in test mode; download only 3 slides", action="store_true")
     args = parser.parse_args()
 
     #poster_id = 'BR100-ED-X'
@@ -86,10 +87,16 @@ def main():
 
     prev_sld_id = ""
     reach_slides_end = False
+    slide_counter = 0   # for test mode use
     while not reach_slides_end:
         try:
             WebDriverWait(chrome, 10).until(AllImagesLoaded())
         finally:
+            if args.test:
+                slide_counter += 1
+                if slide_counter > 3:
+                    break
+            
             sld_div = chrome.find_element_by_xpath("//div[starts-with(@id, 'sld')]")
             curr_sld_id = sld_div.get_attribute("id")
             if curr_sld_id != prev_sld_id:
