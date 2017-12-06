@@ -6,8 +6,9 @@ name = "pypi"
 
 
 [packages]
-
 selenium = "*"
+pylint = "*"
+
 
 
 [dev-packages]
