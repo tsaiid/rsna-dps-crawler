@@ -1,4 +1,7 @@
-import sys, re, os
+import sys
+import re
+import os
+import pathlib
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 #from selenium.webdriver.common.keys import Keys
@@ -42,15 +45,21 @@ chrome = webdriver.Chrome('/usr/local/bin/chromedriver', chrome_options=chrome_o
 #chrome.set_window_size(800, 800)
 
 poster_id = 'BR100-ED-X'
-m = re.search(r'(\w+)(\d+).+', poster_id)
+m = re.search(r'([a-zA-Z]+)(\d+).+', poster_id)
 subspecialty, subspecialty_id = m.group(1), m.group(2)
 
 #chrome.get('https://python.org/')
-chrome.get('https://dps.rsna.org/media/BR100-ED-X/presentation/')
+poster_url = 'https://dps.rsna.org/media/{}/presentation/'.format(poster_id)
+chrome.get(poster_url)
 
+
+# mkdirs
+downloaded_poster_path = os.path.join(os.path.dirname(__file__), '{}/{} {}'.format(subspecialty, poster_id, chrome.title))
+pathlib.Path(downloaded_poster_path).mkdir(parents=True, exist_ok=True) 
+
+#chrome.close()
 #sys.exit(1)
 
-title = chrome.title
 viewpost_element = chrome.find_element_by_id("SGT_viewport")
 
 #chrome.implicitly_wait(10)
@@ -64,7 +73,8 @@ while not reach_slides_end:
         sld_div = chrome.find_element_by_xpath("//div[starts-with(@id, 'sld')]")
         curr_sld_id = sld_div.get_attribute("id")
         if curr_sld_id != prev_sld_id:
-            chrome.save_screenshot("{}.png".format(curr_sld_id))
+            downloaded_sld_path = os.path.join(downloaded_poster_path, "{}.png".format(curr_sld_id))
+            chrome.save_screenshot(downloaded_sld_path)
             viewpost_element.click()
             prev_sld_id = curr_sld_id
         else:
