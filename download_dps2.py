@@ -12,20 +12,16 @@ import requests
 
 SLIDE_URL = 'https://dps.rsna.org/media/{0}/presentation/images/Slide{1}.png'
 
-def main():
+def download_dps2(poster_id, poster_title='', options={}):
     """
     Main function
     """
-    # parse poster id
-    parser = argparse.ArgumentParser()
-    parser.add_argument('poster_id')
-    parser.add_argument("-t", "--test", help="run in test mode; download only 3 slides", action="store_true")
-    args = parser.parse_args()
 
     #poster_id = 'BR100-ED-X'
-    poster_id = args.poster_id
-    match = re.search(r'([a-zA-Z]+)(\d+).+', poster_id)
-    subspecialty = match.group(1)
+    poster_id = options.get('poster_id', '')
+    #match = re.search(r'([a-zA-Z]+)(\d+).+', poster_id)
+    #subspecialty = match.group(1)
+    subspecialty = poster_id[:2]
 
     # check if the poster exists
     first_slide_url = SLIDE_URL.format(poster_id, 1)
@@ -35,7 +31,8 @@ def main():
         return r.status_code
 
     # mkdirs
-    downloaded_poster_path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(subspecialty, poster_id))
+    poster_path = '{} {}'.format(poster_id, poster_title) if poster_title else poster_id
+    downloaded_poster_path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(subspecialty, poster_path))
     pathlib.Path(downloaded_poster_path).mkdir(parents=True, exist_ok=True)
 
     # do crawling
@@ -57,6 +54,14 @@ def main():
             else:
                 print('error: {0} {1}'.format(e.code, e.reason))
             reach_slides_end = True
+    return False
 
 if __name__ == '__main__':
-    main()
+    # parse poster id
+    parser = argparse.ArgumentParser()
+    parser.add_argument('poster_id')
+    parser.add_argument('poster_title', nargs='?')
+    parser.add_argument("-t", "--test", help="run in test mode; download only 3 slides", action="store_true")
+    args = parser.parse_args()
+
+    download_dps2(args.poster_id, args.poster_title, vars(args))
