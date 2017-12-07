@@ -110,10 +110,10 @@ def write_dict_to_csv(csv_file, dict_data):
     """
     try:
         with open(csv_file, 'w') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=['poster id', 'title'])
+            writer = csv.DictWriter(csvfile, fieldnames=['poster_id', 'title'])
             writer.writeheader()
             for key, value in dict_data.items():
-                writer.writerow({'poster id': key, 'title': value})
+                writer.writerow({'poster_id': key, 'title': value})
     except IOError:
         print('I/O error', csv_file)
     return
