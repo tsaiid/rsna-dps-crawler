@@ -3,11 +3,30 @@ Download RSNA DPS by a given poster id.
 """
 
 import argparse
+import time
 import logging
 import os
 import pathlib
 import requests
 
+def try_fetch_url(s, url, max_try=10, sleep_time=30):
+    """
+    sleep for some time to handle with ConnectionResetError
+    """
+    for r_count in range(max_try):
+        try:
+            r = s.get(url)
+        except requests.exceptions.ConnectionError as err:
+            logging.debug(str(err))
+            if r_count >= max_try-1:
+                logging.info('Retried: %s times fetching: %s', max_try, url)
+            else:
+                logging.info('ConnectionError, sleep: %s s, retry: %s', sleep_time, r_count)
+                time.sleep(sleep_time)
+        else:
+            time.sleep(0.1)
+            break
+    return r
 
 def download_dps2(poster_id, poster_title='', options=None):
     """
@@ -26,8 +45,8 @@ def download_dps2(poster_id, poster_title='', options=None):
     s.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'})
 
     first_slide_url = slide_url_pattern.format(poster_id, 1)
-    logging.debug('first_slide_url: %s', first_slide_url)
-    r = s.get(first_slide_url)
+    logging.info('first_slide_url: %s', first_slide_url)
+    r = try_fetch_url(s, first_slide_url)
     if r.status_code != 200:
         print("The poster (%s) does not exist.", poster_id)
         return r.status_code
@@ -49,7 +68,7 @@ def download_dps2(poster_id, poster_title='', options=None):
         local_slide_path = os.path.join(downloaded_poster_path, "Slide{0}.png".format(slide_no))
 
         if r.url != local_slide_path:   # first slide already got
-            r = s.get(slide_url)
+            r = try_fetch_url(s, slide_url)
         if r.status_code == 200:
             open(local_slide_path, 'wb').write(r.content)
         elif r.status_code == 404:
