@@ -6,6 +6,7 @@ import argparse
 import time
 import logging
 import os
+import errno
 import pathlib
 import requests
 
@@ -53,8 +54,16 @@ def download_dps2(poster_id, poster_title='', options=None):
 
     # mkdirs
     poster_path = '{} {}'.format(poster_id, poster_title) if poster_title else poster_id
-    downloaded_poster_path = os.path.join(os.path.dirname(__file__), '{}/{}'.format(subspecialty, poster_path))
-    pathlib.Path(downloaded_poster_path).mkdir(parents=True, exist_ok=True)
+    downloaded_poster_path = os.path.join(os.path.dirname(__file__),
+                                          '{}/{}'.format(subspecialty, poster_path))
+    try:
+        pathlib.Path(downloaded_poster_path).mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        if e.errno == errno.ENAMETOOLONG:
+            poster_path = poster_path.split(':')[0][:255]
+            downloaded_poster_path = os.path.join(os.path.dirname(__file__),
+                                                  '{}/{}'.format(subspecialty, poster_path))
+            pathlib.Path(downloaded_poster_path).mkdir(parents=True, exist_ok=True)
 
     # do crawling
     reach_slides_end = False
@@ -75,7 +84,7 @@ def download_dps2(poster_id, poster_title='', options=None):
             logging.info('Poster %s ends at slide %d', poster_id, slide_no)
             reach_slides_end = True
         else:
-            logging.error('Error: %d %s', e.code, e.reason)
+            logging.error('Error: %d %s', r.status_code, r.reason)
             reach_slides_end = True
     return 0
 
